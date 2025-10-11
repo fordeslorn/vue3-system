@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import Login from '@/components/Login.vue'
-
+import { RouterLink } from 'vue-router'
+  
 </script>
 
 <template>
-  <Login />
-
+  <router-view />
 </template>
 
 <style scoped></style>
