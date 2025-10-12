@@ -1,21 +1,93 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+const router = useRouter()
+const userStore = useUserStore()  
+
 const email = ref('')
 const password = ref('')
 
-function handleLogin() {
-  // 在这里处理登录逻辑
-  console.log('Email:', email.value)
-  console.log('Password:', password.value)
-  alert(`登录中... \n邮箱: ${email.value}\n密码: ${password.value}`)
+// 错误信息 ref
+const emailError = ref('')
+const passwordError = ref('')
 
-  password.value = ''  // 清空密码字段
+
+// 验证函数
+function validateEmail() {
+  // 简单的邮箱格式正则
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email.value) {
+    emailError.value = 'Email cannot be empty'
+  } else if (!emailRegex.test(email.value)) {
+    emailError.value = 'Please enter a valid email address'
+  } else {
+    emailError.value = ''
+  }
+}
+
+function validatePassword() {
+  // 密码要求：8位以上，包含大小写字母和数字
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
+  if (!password.value) {
+    passwordError.value = 'Password cannot be empty'
+  } else if (password.value.length < 8) {
+    passwordError.value = 'Password must be at least 8 characters long'
+  } else if (!passwordRegex.test(password.value)) {
+    passwordError.value = 'Password must contain uppercase, lowercase letters, and numbers'
+  } else {
+    passwordError.value = ''
+  }
+}
+
+// 使用 watch 监听输入变化，提供实时反馈
+watch(email, validateEmail)
+watch(password, validatePassword)
+
+function handleLogin() {
+  // 提交时进行最终验证
+  validateEmail()
+  validatePassword()
+
+  // 如果有任何错误，则停止执行
+  if (emailError.value || passwordError.value) {
+    return
+  }
+
+  // 后端逻辑:(需要实现后端接口)
+  // 发送用户数据发送到后端的登陆接口进行验证
+
+  /*
+  后端处理:
+  后端收到请求。
+  根据 email 从数据库中找到对应的用户记录。
+  使用相同的哈希算法，将用户本次输入的密码与数据库中存储的加密密码进行比对。
+  如果比对成功，则身份验证通过。
+   */
+
+   /*
+  后端 -> 前端:
+  如果验证成功，后端会返回一个成功的响应，并附带该用户的非敏感信息，例如：{"success": true, "user": {"id": "user-xyz-789", "username": "张三"}}。
+  后端通常还会设置一个 HttpOnly 的 cookie，作为后续请求的身份凭证。
+   */
+
+  // 假设登录成功，从后端获取了用户信息
+  const userDataFromBackend = {
+    id: 'user_abc123',
+    name: '张三',
+  }
+
+  // 将后端返回的 id 和 username 存入 Pinia 全局状态
+  userStore.setUser(userDataFromBackend)
+
+  // 以上逻辑成功后跳转到主页面
+  router.push('/')  
 }
 </script>
 
@@ -35,10 +107,12 @@ function handleLogin() {
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input id="email" v-model="email" type="email" placeholder="m@example.com" required />
+          <p v-if="emailError" class="text-sm text-red-400">{{ emailError }}</p>
         </div>
         <div class="grid gap-2">
           <Label for="password">Password</Label>
           <Input id="password" v-model="password" type="password" placeholder="Enter your password" required />
+          <p v-if="passwordError" class="text-sm text-red-400">{{ passwordError }}</p>
         </div>
       </CardContent>
       <CardFooter class="grid gap-4 justify-items-center">
