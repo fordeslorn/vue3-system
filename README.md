@@ -8,7 +8,7 @@ Used the shadcn-vue UI.
 
 ## Some Pages
 **Login**
-![](.\docs\img\login.png)
+![](docs/img/login.png)
  
 ## Project Setup
 
