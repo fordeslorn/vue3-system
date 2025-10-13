@@ -116,7 +116,7 @@ function handleLogin() {
         </div>
       </CardContent>
       <CardFooter class="grid gap-4 justify-items-center">
-        <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-indigo-700 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" @click="handleLogin">
+        <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" @click="handleLogin">
           Log in
         </Button>
         <Label>Don't have an account? <RouterLink to="/signup" class="text-indigo-400 hover:underline">Sign up</RouterLink></Label>
