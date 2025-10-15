@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import apiClient from '@/api'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +18,7 @@ const password = ref('')
 // 错误信息 ref
 const emailError = ref('')
 const passwordError = ref('')
-
+const apiError = ref('')
 
 // 验证函数
 function validateEmail() {
@@ -50,7 +51,8 @@ function validatePassword() {
 watch(email, validateEmail)
 watch(password, validatePassword)
 
-function handleLogin() {
+async function handleLogin() {
+  apiError.value = ''
   // 提交时进行最终验证
   validateEmail()
   validatePassword()
@@ -60,34 +62,32 @@ function handleLogin() {
     return
   }
 
-  // 后端逻辑:(需要实现后端接口)
-  // 发送用户数据发送到后端的登陆接口进行验证
+  try {
+    const response = await apiClient.post('/login', {
+      email: email.value,
+      password: password.value,
+    });
 
-  /*
-  后端处理:
-  后端收到请求。
-  根据 email 从数据库中找到对应的用户记录。
-  使用相同的哈希算法，将用户本次输入的密码与数据库中存储的加密密码进行比对。
-  如果比对成功，则身份验证通过。
-   */
+    const userData = {
+      id: response.data.id,
+      name: response.data.username,
+    };
 
-   /*
-  后端 -> 前端:
-  如果验证成功，后端会返回一个成功的响应，并附带该用户的非敏感信息，例如：{"success": true, "user": {"id": "user-xyz-789", "username": "张三"}}。
-  后端通常还会设置一个 HttpOnly 的 cookie，作为后续请求的身份凭证。
-   */
+    // 将后端返回的用户信息存入 Pinia 全局状态
+    userStore.setUser(userData);
 
-  // 假设登录成功，从后端获取了用户信息
-  const userDataFromBackend = {
-    id: 'user_abc123',
-    name: '张三',
+    // 登录成功后跳转到主页面
+    router.push('/');
+
+  } catch (error: any) {
+    console.error('Login failed:', error);
+    // 假设后端在失败时返回 { "error": "错误信息" }
+    if (error.response && error.response.data && error.response.data.error) {
+      apiError.value = error.response.data.error;
+    } else {
+      apiError.value = 'Login failed, please check your email and password.';
+    }
   }
-
-  // 将后端返回的 id 和 username 存入 Pinia 全局状态
-  userStore.setUser(userDataFromBackend)
-
-  // 以上逻辑成功后跳转到主页面
-  router.push('/')  
 }
 </script>
 
@@ -102,6 +102,7 @@ function handleLogin() {
         <CardDescription>
           Please enter your email and password to log in to your account.
         </CardDescription>
+        <p v-if="apiError" class="text-sm text-red-400 text-center">{{ apiError }}</p>
       </CardHeader>
       <CardContent class="grid gap-4">
         <div class="grid gap-2">

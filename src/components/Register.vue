@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import apiClient from '@/api'
+
 
 const router = useRouter()
 
@@ -18,6 +20,7 @@ const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
+const apiError = ref('')
 
 // 验证函数
 function validateUsername() {
@@ -76,10 +79,11 @@ watch(password, () => {
     validateConfirmPassword()
   }
 })
-watch(confirmPassword, validateConfirmPassword)
+// watch(confirmPassword, validateConfirmPassword)
 
 
-function handleRegister() {
+async function handleRegister() {
+  apiError.value = ''
   // 提交时进行最终验证
   validateUsername()
   validateEmail()
@@ -91,22 +95,26 @@ function handleRegister() {
     return
   }
   
-  // 发送到后端的逻辑:(需要实现后端接口)
-  // 应该把用户数据发送到后端进行注册
-  /*后端处理:
-  后端服务器收到请求。
-  它会进行后端验证（这是必须的，为了安全）。
-  检查邮箱或用户名是否已经被注册。
-  对密码进行哈希加密（绝不存储明文密码！）。
-  生成一个唯一的 userId，并将所有信息存入数据库。*/
+  try {
+    await apiClient.post('/register', {
+      username: username.value,
+      email: email.value,
+      password: password.value,
+    });
 
-  // 这里只是模拟成功注册
-  console.log('所有验证通过，准备提交')
-  alert(`注册成功！\n用户名: ${username.value}\n邮箱: ${email.value}`)
-  // 后端向前端返回一个响应如 {"success": true, "message": "注册成功"}
+    // Register successful
+    alert(`Register successful! Please log in.`);
+    router.push('/login');
 
-  // 前端收到成功的响应，跳转到登录页面
-  router.push('/login')
+  } catch (error: any) {
+    console.error('Register failed:', error);
+    // 假设后端在失败时返回 { "error": "错误信息" }
+    if (error.response && error.response.data && error.response.data.error) {
+      apiError.value = error.response.data.error;
+    } else {
+      apiError.value = 'Register failed, please try again later.';
+    }
+  } 
 }
 </script>
 
@@ -121,6 +129,7 @@ function handleRegister() {
         <CardDescription>
           Please enter your email and password to create your account.
         </CardDescription>
+        <p v-if="apiError" class="text-sm text-red-400 text-center">{{ apiError }}</p>
       </CardHeader>
       <CardContent class="grid gap-4">
         <div class="grid gap-2">

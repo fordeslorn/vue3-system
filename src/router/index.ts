@@ -15,12 +15,14 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: Login
+      component: Login,
+      meta: { guestOnly: true }
     },
     {
       path: '/signup',
       name: 'signup',
-      component: Register
+      component: Register,
+      meta: { guestOnly: true }
     }
      
   ]
@@ -28,21 +30,14 @@ const router = createRouter({
 
 // 全局导航守卫
 router.beforeEach(async (to, from, next) => {
-  const userStore = useUserStore()
-
-  // 首次进入或刷新页面时，先尝试恢复会话
-  if (!userStore.isLoggedIn && !userStore.isRestoringSession) {
-    await userStore.restoreSession()
-  }
-
-  // 如果目标路由需要登录，但用户未登录
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    // 则重定向到登录页
-    next({ name: 'login' })
+  const userStore = useUserStore();  
+  
+  if (to.meta.guestOnly && userStore.isLoggedIn) {
+    // 如果用户已登录，但想访问登录/注册页，则将他们重定向到首页
+    next({ name: 'home' });
   } else {
-    // 否则，正常放行
-    next()
+    // 否则正常放行
+    next();
   }
-})
-
+});
 export default router
