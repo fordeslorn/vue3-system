@@ -23,7 +23,7 @@ export const useUserStore = defineStore('user', () => {
         try {
             const response = await apiClient.get('/me');
             if (response.data) {
-                setUser({ id: response.data.id, name: response.data.username });
+                setUser({ id: response.data.user.id, name: response.data.user.username });
         }
         } catch (error) {
             console.error('用户未登录或 token 失效', error)

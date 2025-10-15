@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import apiClient from '@/api'
@@ -49,7 +49,7 @@ function validatePassword() {
 
 // 使用 watch 监听输入变化，提供实时反馈
 watch(email, validateEmail)
-watch(password, validatePassword)
+// watch(password, validatePassword)
 
 async function handleLogin() {
   apiError.value = ''
@@ -69,15 +69,17 @@ async function handleLogin() {
     });
 
     const userData = {
-      id: response.data.id,
-      name: response.data.username,
+      id: response.data.user.id,
+      name: response.data.user.username,
     };
 
     // 将后端返回的用户信息存入 Pinia 全局状态
     userStore.setUser(userData);
 
+    await nextTick();
+
     // 登录成功后跳转到主页面
-    router.push('/');
+    router.replace('/');
 
   } catch (error: any) {
     console.error('Login failed:', error);
