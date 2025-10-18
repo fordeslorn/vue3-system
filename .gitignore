@@ -30,3 +30,6 @@ coverage
 *.tsbuildinfo
 
 .env*
+
+# Other files and directories
+solutions.md

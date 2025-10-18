@@ -3,6 +3,7 @@ import { ref, watch, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import apiClient from '@/api'
+import CaptchaModal from './auth/CaptchaModal.vue'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,11 @@ const emailError = ref('')
 const passwordError = ref('')
 const apiError = ref('')
 
+// 人机验证
+const isCaptchaOpen = ref(false)
+const pendingLogin = ref(false)
+
+
 // 验证函数
 function validateEmail() {
   // 简单的邮箱格式正则
@@ -35,7 +41,7 @@ function validateEmail() {
 
 function validatePassword() {
   // 密码要求：8位以上，包含大小写字母和数字
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
   if (!password.value) {
     passwordError.value = 'Password cannot be empty'
   } else if (password.value.length < 8) {
@@ -62,10 +68,21 @@ async function handleLogin() {
     return
   }
 
+  isCaptchaOpen.value = true
+}
+
+// Captcha 成功回调：拿到一次性 code 后继续真正的登录请求
+async function onCaptchaSuccess(code: string) {
+  isCaptchaOpen.value = false
+  if (pendingLogin.value) return
+  pendingLogin.value = true
+  apiError.value = ''
+
   try {
     const response = await apiClient.post('/login', {
       email: email.value,
       password: password.value,
+      verificationCode: code, // 把 captcha code 一并发送
     });
 
     const userData = {
@@ -80,15 +97,18 @@ async function handleLogin() {
 
     // 登录成功后跳转到主页面
     router.replace('/');
-
   } catch (error: any) {
+    
     console.error('Login failed:', error);
-    // 假设后端在失败时返回 { "error": "错误信息" }
+    password.value = ''
+    await nextTick()
     if (error.response && error.response.data && error.response.data.error) {
       apiError.value = error.response.data.error;
     } else {
       apiError.value = 'Login failed, please check your email and password.';
     }
+  } finally {
+      pendingLogin.value = false
   }
 }
 </script>
@@ -119,11 +139,16 @@ async function handleLogin() {
         </div>
       </CardContent>
       <CardFooter class="grid gap-4 justify-items-center">
-        <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" @click="handleLogin">
+        <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" 
+                @click="handleLogin"
+                :disabled="pendingLogin">
           Log in
         </Button>
         <Label>Don't have an account? <RouterLink to="/signup" class="text-indigo-400 hover:underline">Sign up</RouterLink></Label>
       </CardFooter>
     </Card>
+
+    <CaptchaModal v-model:open="isCaptchaOpen" @success="onCaptchaSuccess" />
+  
   </div>
 </template>

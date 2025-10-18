@@ -11,6 +11,12 @@ export const useUserStore = defineStore('user', () => {
 
     const isLoggedIn = computed(() => !!userId.value)
 
+     // [核心修改] 在开发环境下，根据环境变量设置初始状态
+    if (import.meta.env.DEV && import.meta.env.VITE_MOCK_LOGGED_IN === 'true') {
+      userId.value = 'mock-user-id';
+      userName.value = 'Dev User';
+    }
+
     // Actions (方法)
     /**
    * [核心] 尝试恢复会话

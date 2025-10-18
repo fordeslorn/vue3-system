@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import apiClient from '@/api'
+
 
 
 const router = useRouter()
@@ -47,7 +48,7 @@ function validateEmail() {
 
 function validatePassword() {
   // 密码要求：8位以上，包含大小写字母和数字
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
   if (!password.value) {
     passwordError.value = 'Password cannot be empty'
   } else if (password.value.length < 8) {
@@ -92,6 +93,10 @@ async function handleRegister() {
 
   // 如果有任何错误，则停止执行
   if (usernameError.value || emailError.value || passwordError.value || confirmPasswordError.value) {
+    if (confirmPasswordError.value) {
+      confirmPassword.value = ''
+      await nextTick()
+    }
     return
   }
   
@@ -107,10 +112,18 @@ async function handleRegister() {
     router.push('/login');
 
   } catch (error: any) {
+  
     console.error('Register failed:', error);
-    // 假设后端在失败时返回 { "error": "错误信息" }
-    if (error.response && error.response.data && error.response.data.error) {
-      apiError.value = error.response.data.error;
+    const serverMsg = error?.response?.data?.message || error?.response?.data?.error
+    if (error?.response?.status === 409) {
+      apiError.value = 'Email already exists'
+      username.value = ''
+      email.value = ''
+      password.value = ''
+      confirmPassword.value = ''
+      await nextTick()
+    } else if (serverMsg) {
+      apiError.value = serverMsg
     } else {
       apiError.value = 'Register failed, please try again later.';
     }
