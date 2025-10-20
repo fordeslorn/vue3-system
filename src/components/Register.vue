@@ -8,35 +8,23 @@ import { Label } from '@/components/ui/label'
 import apiClient from '@/api'
 
 
-
 const router = useRouter()
 
-const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
 // 错误信息 ref
-const usernameError = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
 const apiError = ref('')
 
 // 验证函数
-function validateUsername() {
-  if (!username.value) {
-    usernameError.value = 'Username cannot be empty'
-  } else if (username.value.length > 30) {
-    usernameError.value = 'Username must be less than 30 characters long'
-  } else {
-    usernameError.value = ''
-  }
-}
 
 function validateEmail() {
   // 简单的邮箱格式正则
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   if (!email.value) {
     emailError.value = 'Email cannot be empty'
   } else if (!emailRegex.test(email.value)) {
@@ -71,7 +59,6 @@ function validateConfirmPassword() {
 }
 
 // 使用 watch 监听输入变化，提供实时反馈
-watch(username, validateUsername)
 watch(email, validateEmail)
 watch(password, () => {
   validatePassword()
@@ -80,19 +67,17 @@ watch(password, () => {
     validateConfirmPassword()
   }
 })
-// watch(confirmPassword, validateConfirmPassword)
 
 
 async function handleRegister() {
   apiError.value = ''
   // 提交时进行最终验证
-  validateUsername()
   validateEmail()
   validatePassword()
   validateConfirmPassword()
 
   // 如果有任何错误，则停止执行
-  if (usernameError.value || emailError.value || passwordError.value || confirmPasswordError.value) {
+  if (emailError.value || passwordError.value || confirmPasswordError.value) {
     if (confirmPasswordError.value) {
       confirmPassword.value = ''
       await nextTick()
@@ -102,7 +87,6 @@ async function handleRegister() {
   
   try {
     await apiClient.post('/register', {
-      username: username.value,
       email: email.value,
       password: password.value,
     });
@@ -117,7 +101,6 @@ async function handleRegister() {
     const serverMsg = error?.response?.data?.message || error?.response?.data?.error
     if (error?.response?.status === 409) {
       apiError.value = 'Email already exists'
-      username.value = ''
       email.value = ''
       password.value = ''
       confirmPassword.value = ''
@@ -145,11 +128,6 @@ async function handleRegister() {
         <p v-if="apiError" class="text-sm text-red-400 text-center">{{ apiError }}</p>
       </CardHeader>
       <CardContent class="grid gap-4">
-        <div class="grid gap-2">
-          <Label for="username">Username</Label>
-          <Input id="username" v-model="username" type="text" placeholder="Enter your username" required />
-          <p v-if="usernameError" class="text-sm text-red-400">{{ usernameError }}</p>
-        </div>
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input id="email" v-model="email" type="email" placeholder="m@example.com" required />
