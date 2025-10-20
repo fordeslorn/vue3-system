@@ -79,7 +79,7 @@ async function onCaptchaSuccess(code: string) {
   apiError.value = ''
 
   try {
-    const response = await apiClient.post('/login', {
+    const response = await apiClient.post('/auth/login', {
       email: email.value,
       password: password.value,
       verificationCode: code, // 把 captcha code 一并发送

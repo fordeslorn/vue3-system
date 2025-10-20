@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useNotificationStore } from '@/stores/notification'
+import apiClient from '@/api'
+import CaptchaModal from './auth/CaptchaModal.vue'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import apiClient from '@/api'
 
 
 const router = useRouter()
+const notificationStore = useNotificationStore()
+
+const isSendingCode = ref(false)
+const countdown = ref(0)
+const isCaptchaOpen = ref(false)
 
 const email = ref('')
+const emailVerificationCode = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 
@@ -18,19 +27,29 @@ const confirmPassword = ref('')
 const emailError = ref('')
 const passwordError = ref('')
 const confirmPasswordError = ref('')
+const emailVerificationCodeError = ref('')
 const apiError = ref('')
 
 // 验证函数
-
 function validateEmail() {
-  // 简单的邮箱格式正则
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   if (!email.value) {
     emailError.value = 'Email cannot be empty'
+    return false
   } else if (!emailRegex.test(email.value)) {
     emailError.value = 'Please enter a valid email address'
+    return false
   } else {
     emailError.value = ''
+    return true
+  }
+}
+
+function validateEmailVerificationCode() {
+  if (!emailVerificationCode.value) {
+    emailVerificationCodeError.value = 'Verification code cannot be empty'
+  } else {
+    emailVerificationCodeError.value = ''
   }
 }
 
@@ -58,6 +77,54 @@ function validateConfirmPassword() {
   }
 }
 
+// 计算属性
+const sendCodeButtonText = computed(() => {
+  if (countdown.value > 0) {
+    return `${countdown.value}s`
+  }
+  return 'Send Code'
+})
+
+// 发送验证码逻辑
+async function handleSendCode() {
+  if (!validateEmail()) {
+    notificationStore.showNotification('Please enter a valid email first.', 'error')
+    return
+  }
+  if (isSendingCode.value || countdown.value > 0) return
+
+  isCaptchaOpen.value = true // 打开人机验证弹窗
+}
+
+// 处理人机验证成功后的逻辑
+async function onCaptchaSuccess(captchaCode: string) {
+  isCaptchaOpen.value = false // 关闭弹窗
+  isSendingCode.value = true // 开始加载状态
+
+  try {
+    // 将人机验证码和邮箱一起发送到后端
+    await apiClient.post('/auth/email-verification', { 
+      email: email.value,
+      captchaCode: captchaCode, // 发送人机验证码
+    })
+    notificationStore.showNotification('Verification code sent to your email!', 'success')
+    
+    // 开始倒计时
+    countdown.value = 60
+    const interval = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) clearInterval(interval)
+    }, 1000)
+
+  } catch (error: any) {
+    const msg = error.response?.data?.message || 'Failed to send code. Please try again.'
+    notificationStore.showNotification(msg, 'error')
+  } finally {
+    isSendingCode.value = false // 结束加载状态
+  }
+}
+
+
 // 使用 watch 监听输入变化，提供实时反馈
 watch(email, validateEmail)
 watch(password, () => {
@@ -67,6 +134,7 @@ watch(password, () => {
     validateConfirmPassword()
   }
 })
+watch(emailVerificationCode, validateEmailVerificationCode)
 
 
 async function handleRegister() {
@@ -75,9 +143,10 @@ async function handleRegister() {
   validateEmail()
   validatePassword()
   validateConfirmPassword()
+  validateEmailVerificationCode()
 
   // 如果有任何错误，则停止执行
-  if (emailError.value || passwordError.value || confirmPasswordError.value) {
+  if (emailError.value || passwordError.value || confirmPasswordError.value || emailVerificationCodeError.value) {
     if (confirmPasswordError.value) {
       confirmPassword.value = ''
       await nextTick()
@@ -86,24 +155,32 @@ async function handleRegister() {
   }
   
   try {
-    await apiClient.post('/register', {
+    await apiClient.post('/auth/register', {
       email: email.value,
       password: password.value,
+      emailVerificationCode: emailVerificationCode.value
     });
 
     // Register successful
-    alert(`Register successful! Please log in.`);
+    notificationStore.showNotification('Registration successful! Please log in.', 'success');
     router.push('/login');
 
   } catch (error: any) {
   
     console.error('Register failed:', error);
     const serverMsg = error?.response?.data?.message || error?.response?.data?.error
-    if (error?.response?.status === 409) {
+    
+    if (serverMsg && serverMsg.toLowerCase().includes('verification code')) {
+      apiError.value = serverMsg; // 显示后端返回的错误信息
+      emailVerificationCode.value = ''; // 清空验证码输入框
+      await nextTick();
+    } else if (error?.response?.status === 409) {
       apiError.value = 'Email already exists'
+      // 清空所有输入框
       email.value = ''
       password.value = ''
       confirmPassword.value = ''
+      emailVerificationCode.value = ''
       await nextTick()
     } else if (serverMsg) {
       apiError.value = serverMsg
@@ -127,11 +204,27 @@ async function handleRegister() {
         </CardDescription>
         <p v-if="apiError" class="text-sm text-red-400 text-center">{{ apiError }}</p>
       </CardHeader>
+
       <CardContent class="grid gap-4">
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input id="email" v-model="email" type="email" placeholder="m@example.com" required />
           <p v-if="emailError" class="text-sm text-red-400">{{ emailError }}</p>
+        </div>
+        <div class="grid gap-2">
+          <Label for="verification-code">Verification Code</Label>
+          <div class="flex items-center gap-2">
+            <Input id="verification-code" v-model="emailVerificationCode" type="text" placeholder="6-digit code" class="flex-grow" required />
+            <Button 
+              @click="handleSendCode" 
+              :disabled="isSendingCode || countdown > 0"
+              variant="outline"
+              class="bg-gray-700/50 hover:bg-gray-700/80 hover:text-white active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150"
+            >
+              {{ sendCodeButtonText }}
+            </Button>
+          </div>
+          <p v-if="emailVerificationCodeError" class="text-sm text-red-400">{{ emailVerificationCodeError }}</p>
         </div>
         <div class="grid gap-2">
           <Label for="password">Password</Label>
@@ -144,6 +237,7 @@ async function handleRegister() {
           <p v-if="confirmPasswordError" class="text-sm text-red-400">{{ confirmPasswordError }}</p>  
         </div>
       </CardContent>
+
       <CardFooter class="grid gap-4 justify-items-center">
         <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" @click="handleRegister">
           Sign up
@@ -151,5 +245,7 @@ async function handleRegister() {
         <Label>Already have an account? <RouterLink to="/login" class="text-indigo-400 hover:underline">Log in</RouterLink></Label>
       </CardFooter>
     </Card>
+
+    <CaptchaModal v-model:open="isCaptchaOpen" @success="onCaptchaSuccess" />
   </div>
 </template>
