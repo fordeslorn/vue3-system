@@ -29,7 +29,7 @@ const pendingLogin = ref(false)
 // 验证函数
 function validateEmail() {
   // 简单的邮箱格式正则
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   if (!email.value) {
     emailError.value = 'Email cannot be empty'
   } else if (!emailRegex.test(email.value)) {
@@ -79,7 +79,7 @@ async function onCaptchaSuccess(code: string) {
   apiError.value = ''
 
   try {
-    const response = await apiClient.post('/login', {
+    const response = await apiClient.post('/auth/login', {
       email: email.value,
       password: password.value,
       verificationCode: code, // 把 captcha code 一并发送
