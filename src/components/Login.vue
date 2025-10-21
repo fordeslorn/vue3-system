@@ -154,7 +154,8 @@ async function onCaptchaSuccess(code: string) {
             </span>
           </div>
         </div>
-        <Button variant="outline" class="w-full bg-zinc-900 hover:bg-zinc-800 hover:text-white active:bg-zinc-700 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" 
+        <Button variant="outline" 
+                class="w-full bg-zinc-900 hover:bg-zinc-800 hover:text-white active:bg-zinc-700 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" 
                 @click="router.push('/auth/forgot')">
           Forgot Password?
         </Button>
