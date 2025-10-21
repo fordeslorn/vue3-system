@@ -3,7 +3,7 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useNotificationStore } from '@/stores/notification'
 import apiClient from '@/api'
-import CaptchaModal from './auth/CaptchaModal.vue'
+import CaptchaModal from '@/components/auth/CaptchaModal.vue'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,11 +46,16 @@ function validateEmail() {
 }
 
 function validateEmailVerificationCode() {
+  const codeRegex = /^\d{6}$/
   if (!emailVerificationCode.value) {
     emailVerificationCodeError.value = 'Verification code cannot be empty'
-  } else {
-    emailVerificationCodeError.value = ''
+    return false
+  } else if (!codeRegex.test(emailVerificationCode.value)) {
+    emailVerificationCodeError.value = 'Verification code must be 6 digits'
+    return false
   }
+  emailVerificationCodeError.value = ''
+  return true
 }
 
 function validatePassword() {
@@ -241,6 +246,21 @@ async function handleRegister() {
       <CardFooter class="grid gap-4 justify-items-center">
         <Button class="w-full bg-gray-700/50 hover:bg-gray-700/80 active:bg-gray-600 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" @click="handleRegister">
           Sign up
+        </Button>
+        <div class="relative w-full my-2">
+          <div class="absolute inset-0 flex items-center">
+            <span class="w-full border-t border-white/20"></span>
+          </div>
+          <div class="relative flex justify-center text-xs uppercase">
+            <span class="bg-zinc-950 px-2 text-zinc-400">
+              or
+            </span>
+          </div>
+        </div>
+        <Button variant="outline" 
+                class="w-full bg-zinc-900 hover:bg-zinc-800 hover:text-white active:bg-zinc-700 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" 
+                @click="router.push('/auth/forgot')">
+          Forgot Password?
         </Button>
         <Label>Already have an account? <RouterLink to="/login" class="text-indigo-400 hover:underline">Log in</RouterLink></Label>
       </CardFooter>

@@ -144,6 +144,22 @@ async function onCaptchaSuccess(code: string) {
                 :disabled="pendingLogin">
           Log in
         </Button>
+        <div class="relative w-full my-2">
+          <div class="absolute inset-0 flex items-center">
+            <span class="w-full border-t border-white/20"></span>
+          </div>
+          <div class="relative flex justify-center text-xs uppercase">
+            <span class="bg-zinc-950 px-2 text-zinc-400">
+              or
+            </span>
+          </div>
+        </div>
+        <Button variant="outline" 
+                class="w-full bg-zinc-900 hover:bg-zinc-800 hover:text-white active:bg-zinc-700 text-white shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-300/50 transition duration-150 transform hover:-translate-y-0.5" 
+                @click="router.push('/auth/forgot')">
+          Forgot Password?
+        </Button>
+
         <Label>Don't have an account? <RouterLink to="/signup" class="text-indigo-400 hover:underline">Sign up</RouterLink></Label>
       </CardFooter>
     </Card>
