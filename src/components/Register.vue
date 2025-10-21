@@ -3,7 +3,7 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useNotificationStore } from '@/stores/notification'
 import apiClient from '@/api'
-import CaptchaModal from './auth/CaptchaModal.vue'
+import CaptchaModal from '@/components/auth/CaptchaModal.vue'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,11 +46,16 @@ function validateEmail() {
 }
 
 function validateEmailVerificationCode() {
+  const codeRegex = /^\d{6}$/
   if (!emailVerificationCode.value) {
     emailVerificationCodeError.value = 'Verification code cannot be empty'
-  } else {
-    emailVerificationCodeError.value = ''
+    return false
+  } else if (!codeRegex.test(emailVerificationCode.value)) {
+    emailVerificationCodeError.value = 'Verification code must be 6 digits'
+    return false
   }
+  emailVerificationCodeError.value = ''
+  return true
 }
 
 function validatePassword() {

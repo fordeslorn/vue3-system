@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/user'
 import Login from '@/components/Login.vue'
 import Register from '@/components/Register.vue'
 import Homeview from '@/views/Homeview.vue'
+import ForgotPassword from '@/components/auth/ForgotPassword.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,12 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: Register,
+      meta: { guestOnly: true }
+    },
+    {
+      path: '/auth/forgot',
+      name: 'forgot-password',
+      component: ForgotPassword,
       meta: { guestOnly: true }
     }
      
