@@ -42,3 +42,25 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Deploy in server
+You need to change the `dev` script in `package.json` to allow access from other devices in your network:
+```
+"scripts": {
+    "dev": "vite --host",
+  },
+```
+
+And also change the `vite.config.ts` file to allow access from your domain:
+```
+server: {
+    host: true,           
+    port: 5173,
+    allowedHosts: ['your-domain.com'], 
+    origin: 'https://your-domain.com',
+    hmr: {
+      protocol: 'wss',
+      clientPort: 443
+    }
+  }
+```
