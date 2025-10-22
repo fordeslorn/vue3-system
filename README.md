@@ -23,7 +23,7 @@ npm install
 
 Create a `.env.development` file in the root directory and add the following environment variables:
 
-```
+```env
 # This is the base URL for the API endpoints
 VITE_API_BASE_URL=http://localhost:8080/api/v1
 
