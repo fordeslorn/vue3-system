@@ -197,9 +197,9 @@ async function handleRegister() {
 </script>
 
 <template>
-<div class="relative min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat" style="background-image: url('/bg3.png')">  
+<div class="relative min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat p-4" style="background-image: url('/bg3.png')">  
   <div class="absolute inset-0 bg-black/40"></div>
-    <Card class="w-full max-w-sm relative z-10 bg-zinc-950 backdrop-blur-sm border border-white/20 text-white transform -translate-x-35">
+    <Card class="w-full max-w-sm relative z-10 bg-zinc-950 backdrop-blur-sm border border-white/20 text-white md:transform md:-translate-x-35">
       <CardHeader>
         <CardTitle class="text-2xl text-center">
           Create your Account
